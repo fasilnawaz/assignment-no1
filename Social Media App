@@ -1,0 +1,130 @@
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Image, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
+import { Ionicons } from '@expo/vector-icons';
+
+const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
+// Sample posts data
+const posts = [
+  { id: '1', user: 'fasil nawaz', image: 'data:image/jpeg;base64,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', likes: 10, comments: 2 },
+  { id: '2', user: 'raja fasil', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBlfaH2tHfdRie6XzgiC6c1vsPxiiAVkukqg&s', likes: 25, comments: 5 }
+];
+
+// Login/Signup Screen
+function AuthScreen({ navigation }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleAuth = async (isSignup) => {
+    setLoading(true);
+    try {
+      navigation.replace('Main');
+    } catch (error) {
+      alert('Authentication failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Welcome</Text>
+      <TextInput style={styles.input} placeholder="Email" keyboardType="email-address" autoCapitalize="none" onChangeText={setEmail} />
+      <TextInput style={styles.input} placeholder="Password" secureTextEntry onChangeText={setPassword} />
+      {loading ? <ActivityIndicator size="large" color="#6200ee" /> : (
+        <>
+          <TouchableOpacity style={styles.button} onPress={() => handleAuth(false)}>
+            <Text style={styles.buttonText}>Login</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={() => handleAuth(true)}>
+            <Text style={styles.buttonText}>Sign Up</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
+  );
+}
+
+// Feed Screen
+function FeedScreen() {
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.post}>
+            <Text style={styles.username}>{item.user}</Text>
+            <Image source={{ uri: item.image }} style={styles.postImage} />
+            <View style={styles.postActions}>
+              <Text>❤️ {item.likes} Likes</Text>
+              <Text>💬 {item.comments} Comments</Text>
+            </View>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+
+// Profile Screen
+function ProfileScreen() {
+  return (
+    <View style={styles.container}>
+      <Image source={{ uri: 'https://via.placeholder.com/100' }} style={styles.profilePic} />
+      <Text style={styles.username}>User Name</Text>
+      <Text style={styles.bio}>This is a sample bio.</Text>
+      <Text>Followers: 100 | Following: 50</Text>
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        renderItem={({ item }) => <Image source={{ uri: item.image }} style={styles.profilePost} />}
+      />
+    </View>
+  );
+}
+
+function MainTabs() {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen name="Feed" component={FeedScreen} options={{
+        tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />
+      }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{
+        tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />
+      }} />
+    </Tab.Navigator>
+  );
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="Main" component={MainTabs} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 10 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  input: { width: '80%', padding: 10, marginBottom: 10, borderWidth: 1, borderRadius: 5 },
+  button: { backgroundColor: '#6200ee', padding: 10, borderRadius: 5, width: '80%', alignItems: 'center', marginTop: 10 },
+  buttonText: { color: '#fff', fontWeight: 'bold' },
+  profilePic: { width: 100, height: 100, borderRadius: 50, marginBottom: 10 },
+  username: { fontWeight: 'bold', fontSize: 16 },
+  bio: { fontStyle: 'italic', marginBottom: 10 },
+  post: { marginBottom: 20, alignItems: 'center' },
+  postImage: { width: 300, height: 200, borderRadius: 10, marginBottom: 5 },
+  postActions: { flexDirection: 'row', justifyContent: 'space-between', width: '80%' },
+  profilePost: { width: 150, height: 150, margin: 5, borderRadius: 10 },
+});
