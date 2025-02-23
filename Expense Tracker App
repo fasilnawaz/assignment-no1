@@ -1,0 +1,461 @@
+import React, { useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, Text, FlatList, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Card, Button as PaperButton, ProgressBar } from 'react-native-paper';
+import { LineChart, PieChart } from 'react-native-chart-kit';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+// Stack Navigator Setup
+const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
+
+// Dummy Data for Transactions
+let transactions = [
+  { id: '1', type: 'expense', amount: 500, category: 'Food', date: '2023-10-01' },
+  { id: '2', type: 'income', amount: 8000, category: 'Salary', date: '2023-11-25' },
+  { id: '3', type: 'expense', amount: 100, category: 'Transport', date: '2023-10-10' },
+];
+
+// Dashboard Screen
+const DashboardScreen = ({ navigation }) => {
+  const totalIncome = transactions
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpenses = transactions
+    .filter((t) => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const balance = totalIncome - totalExpenses;
+  const monthlyBudget = 1500;
+  const spendingProgress = totalExpenses / monthlyBudget;
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>Fasil Nawaz</Text>
+
+      {/* Balance Card */}
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Your Balance</Text>
+        <Text style={styles.balanceText}>${balance}</Text>
+      </Card>
+
+      {/* Income vs Expenses */}
+      <View style={styles.row}>
+        <Card style={[styles.card, styles.halfCard]}>
+          <Text style={styles.cardTitle}>Income</Text>
+          <Text style={styles.incomeText}>+${totalIncome}</Text>
+        </Card>
+        <Card style={[styles.card, styles.halfCard]}>
+          <Text style={styles.cardTitle}>Expenses</Text>
+          <Text style={styles.expenseText}>-${totalExpenses}</Text>
+        </Card>
+      </View>
+
+      {/* Monthly Budget Progress */}
+      <Card style={styles.card}>
+        <Text style={styles.cardTitle}>Monthly Budget</Text>
+        <ProgressBar progress={spendingProgress} color="#4CAF50" style={styles.progressBar} />
+        <Text style={styles.progressText}>
+          ${totalExpenses} / ${monthlyBudget}
+        </Text>
+      </Card>
+
+      {/* Recent Transactions */}
+      <Text style={styles.subHeader}>Recent Transactions</Text>
+      <FlatList
+        data={transactions.slice(0, 5)}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Card style={styles.transactionCard}>
+            <Text style={styles.transactionText}>
+              {item.category}: ${item.amount} ({item.date})
+            </Text>
+          </Card>
+        )}
+      />
+
+      {/* Add Expense Button */}
+      <PaperButton
+        icon="plus"
+        mode="contained"
+        style={styles.addButton}
+        onPress={() => navigation.navigate('Add Expense')}
+      >
+        Add Expense
+      </PaperButton>
+    </ScrollView>
+  );
+};
+
+// Add Expense Screen
+const AddExpenseScreen = ({ navigation }) => {
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('Food');
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const handleAddExpense = () => {
+    if (!amount || !category || !date) {
+      alert('Please fill all fields!');
+      return;
+    }
+
+    const newExpense = {
+      id: (transactions.length + 1).toString(),
+      type: 'expense',
+      amount: parseFloat(amount),
+      category,
+      date: date.toISOString().split('T')[0],
+    };
+    transactions.push(newExpense);
+    alert('Expense Added!');
+    navigation.goBack();
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>Add Expense</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Amount"
+        value={amount}
+        onChangeText={setAmount}
+        keyboardType="numeric"
+      />
+
+      <Text style={styles.label}>Category</Text>
+      <View style={styles.categoryContainer}>
+        {['Food', 'Transport', 'Entertainment', 'Utilities'].map((cat) => (
+          <TouchableOpacity
+            key={cat}
+            style={[styles.categoryButton, category === cat && styles.selectedCategoryButton]}
+            onPress={() => setCategory(cat)}
+          >
+            <Text style={styles.categoryButtonText}>{cat}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <Text style={styles.label}>Date</Text>
+      <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
+        <Text style={styles.dateButtonText}>{date.toDateString()}</Text>
+      </TouchableOpacity>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+        />
+      )}
+
+      <PaperButton icon="check" mode="contained" onPress={handleAddExpense}>
+        Save Expense
+      </PaperButton>
+    </ScrollView>
+  );
+};
+
+// Transactions List Screen
+const TransactionsListScreen = () => {
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>Transactions</Text>
+      <FlatList
+        data={transactions}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Card style={styles.transactionCard}>
+            <Text style={styles.transactionText}>
+              {item.category}: ${item.amount} ({item.date})
+            </Text>
+          </Card>
+        )}
+      />
+    </ScrollView>
+  );
+};
+
+// Reports & Analytics Screen
+const ReportsScreen = () => {
+  const categories = ['Food', 'Transport', 'Entertainment'];
+  const expensesByCategory = categories.map((category) => {
+    return transactions
+      .filter((t) => t.type === 'expense' && t.category === category)
+      .reduce((sum, t) => sum + t.amount, 0);
+  });
+
+  const data = {
+    labels: categories,
+    datasets: [
+      {
+        data: expensesByCategory,
+      },
+    ],
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>Reports & Analytics</Text>
+
+      {/* Pie Chart */}
+      <Text style={styles.subHeader}>Spending by Category</Text>
+      <PieChart
+        data={data}
+        width={350}
+        height={200}
+        chartConfig={{
+          color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+        }}
+        accessor="data"
+        backgroundColor="transparent"
+        paddingLeft="15"
+      />
+
+      {/* Line Chart */}
+      <Text style={styles.subHeader}>Spending Trends</Text>
+      <LineChart
+        data={{
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+          datasets: [
+            {
+              data: [500, 600, 700, 800, 900],
+            },
+          ],
+        }}
+        width={350}
+        height={200}
+        chartConfig={{
+          backgroundColor: '#1e1e1e',
+          backgroundGradientFrom: '#1e1e1e',
+          backgroundGradientTo: '#1e1e1e',
+          color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+        }}
+      />
+    </ScrollView>
+  );
+};
+
+// Budget Settings Screen
+const BudgetSettingsScreen = () => {
+  const [monthlyLimit, setMonthlyLimit] = useState('');
+
+  const handleSaveBudget = () => {
+    alert(`Monthly Budget of $${monthlyLimit} Set!`);
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>Budget Settings</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Monthly Spending Limit"
+        value={monthlyLimit}
+        onChangeText={setMonthlyLimit}
+        keyboardType="numeric"
+      />
+      <PaperButton icon="check" mode="contained" onPress={handleSaveBudget}>
+        Save Budget
+      </PaperButton>
+    </ScrollView>
+  );
+};
+
+// Profile & Theme Settings Screen
+const ProfileSettingsScreen = () => {
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>Profile & Settings</Text>
+      <Text style={styles.subHeader}>Theme</Text>
+      <TouchableOpacity style={styles.themeButton}>
+        <Text style={styles.themeButtonText}>Dark Theme</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.themeButton}>
+        <Text style={styles.themeButtonText}>Light Theme</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+};
+
+// Tab Navigator Setup
+const TabNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ color, size }) => {
+          let iconName;
+          if (route.name === 'Dashboard') {
+            iconName = 'dashboard';
+          } else if (route.name === 'Transactions') {
+            iconName = 'list';
+          } else if (route.name === 'Reports') {
+            iconName = 'bar-chart';
+          } else if (route.name === 'Budget') {
+            iconName = 'settings';
+          } else if (route.name === 'Profile') {
+            iconName = 'user';
+          }
+          return <MaterialIcons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#6200ee',
+        tabBarInactiveTintColor: '#888',
+        tabBarStyle: { backgroundColor: '#1e1e1e' },
+      })}
+    >
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Transactions" component={TransactionsListScreen} />
+      <Tab.Screen name="Reports" component={ReportsScreen} />
+      <Tab.Screen name="Budget" component={BudgetSettingsScreen} />
+      <Tab.Screen name="Profile" component={ProfileSettingsScreen} />
+    </Tab.Navigator>
+  );
+};
+
+// App Component
+const App = () => {
+  return (
+    <NavigationContainer>
+      <TabNavigator />
+    </NavigationContainer>
+  );
+};
+
+// Export App as Default
+export default App;
+
+// Styles
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#121212',
+    padding: 20,
+  },
+  header: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 20,
+  },
+  subHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  card: {
+    backgroundColor: '#1e1e1e',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  balanceText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  incomeText: {
+    fontSize: 18,
+    color: '#4CAF50',
+  },
+  expenseText: {
+    fontSize: 18,
+    color: '#F44336',
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  halfCard: {
+    width: '48%',
+  },
+  transactionCard: {
+    backgroundColor: '#1e1e1e',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  transactionText: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  input: {
+    backgroundColor: '#1e1e1e',
+    color: '#fff',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  addButton: {
+    marginTop: 20,
+    backgroundColor: '#6200ee',
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 10,
+  },
+  categoryButton: {
+    backgroundColor: '#333',
+    padding: 10,
+    borderRadius: 10,
+    margin: 5,
+  },
+  selectedCategoryButton: {
+    backgroundColor: '#6200ee',
+  },
+  categoryButtonText: {
+    color: '#fff',
+  },
+  dateButton: {
+    backgroundColor: '#1e1e1e',
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  dateButtonText: {
+    color: '#fff',
+  },
+  label: {
+    fontSize: 16,
+    color: '#fff',
+    marginBottom: 5,
+  },
+  progressBar: {
+    height: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  progressText: {
+    fontSize: 16,
+    color: '#fff',
+  },
+  themeButton: {
+    backgroundColor: '#1e1e1e',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  themeButtonText: {
+    fontSize: 16,
+    color: '#fff',
+  },
+});
