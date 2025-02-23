@@ -1,130 +1,367 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, FlatList, ScrollView } from 'react-native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 
-const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
+// Hardcoded user profile data
+const userProfile = {
+  name: 'Fasil Nawaz',
+  email: 'fasi@gmail.com',
+  bio: 'Software Developer | React Native Enthusiast',
+  friendsCount: 120,
+  postsCount: 45,
+  // Paste your profile picture URL here
+  profilePic: 'data:image/jpeg;base64,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', // Replace with your URL
+  // Paste your cover photo URL here
+  coverPhoto: 'https://img.freepik.com/free-vector/app-development-banner_33099-1720.jpg', // Replace with your URL
+};
 
-// Sample posts data
+// Hardcoded post data
 const posts = [
-  { id: '1', user: 'fasil nawaz', image: 'data:image/jpeg;base64,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', likes: 10, comments: 2 },
-  { id: '2', user: 'raja fasil', image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBlfaH2tHfdRie6XzgiC6c1vsPxiiAVkukqg&s', likes: 25, comments: 5 }
+  {
+    id: '1',
+    user: 'Fasil Nawaz',
+    text: 'This is my first post on Mobile application Devolpment!',
+    image: 'https://www.credencys.com/wp-content/uploads/2020/02/mobile-app-development-lifecycle-steps.jpg', // Replace with your URL
+    likes: 10,
+    comments: 2,
+  },
+  {
+    id: '2',
+    user: 'Ali',
+    text: 'Enjoying the weekend!',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKN2JilZj7XAtghPgQQBhMaylFC_lpNlpgNg&s', // Replace with your URL
+    likes: 5,
+    comments: 1,
+  },
 ];
 
-// Login/Signup Screen
-function AuthScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+// Hardcoded chat messages
+const chatMessages = [
+  { id: '1', text: 'Hey, how are you?', sender: 'user' },
+  { id: '2', text: 'I am good, thanks!', sender: 'other' },
+];
 
-  const handleAuth = async (isSignup) => {
-    setLoading(true);
-    try {
-      navigation.replace('Main');
-    } catch (error) {
-      alert('Authentication failed. Please try again.');
-    } finally {
-      setLoading(false);
+// Hardcoded friend requests
+const friendRequests = [
+  { id: '1', name: 'Ahmed', mutualFriends: 5 },
+  { id: '2', name: 'Khawaja', mutualFriends: 2 },
+];
+
+// Dark theme styles
+const darkStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#121212',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#FFFFFF',
+  },
+  input: {
+    width: 250,
+    height: 40,
+    borderColor: '#333',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    color: '#FFFFFF',
+    backgroundColor: '#333',
+  },
+  button: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  profilePic: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+  },
+  coverPhoto: {
+    width: '100%',
+    height: 150,
+    marginBottom: 10,
+  },
+  name: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  email: {
+    fontSize: 16,
+    color: '#888',
+  },
+  bio: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    marginBottom: 10,
+  },
+  stats: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 10,
+  },
+  postContainer: {
+    width: '100%',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  postText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    marginBottom: 10,
+  },
+  postImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  postActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionText: {
+    color: '#FFFFFF',
+    marginLeft: 5,
+  },
+  chatContainer: {
+    flex: 1,
+    width: '100%',
+    padding: 10,
+  },
+  chatBubble: {
+    padding: 10,
+    borderRadius: 8,
+    marginVertical: 5,
+    maxWidth: '80%',
+  },
+  userBubble: {
+    backgroundColor: '#4CAF50',
+    alignSelf: 'flex-end',
+  },
+  otherBubble: {
+    backgroundColor: '#333',
+    alignSelf: 'flex-start',
+  },
+  chatText: {
+    color: '#FFFFFF',
+  },
+  notificationText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    backgroundColor: '#333',
+    padding: 10,
+    borderRadius: 8,
+    marginVertical: 5,
+  },
+  friendRequestContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  friendRequestText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
+});
+
+const LoginScreen = ({ navigation }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = () => {
+    if (username === 'fasil nawaz' && password === 'fasil123') {
+      navigation.replace('MainApp');
+    } else {
+      alert('Invalid Credentials');
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome</Text>
-      <TextInput style={styles.input} placeholder="Email" keyboardType="email-address" autoCapitalize="none" onChangeText={setEmail} />
-      <TextInput style={styles.input} placeholder="Password" secureTextEntry onChangeText={setPassword} />
-      {loading ? <ActivityIndicator size="large" color="#6200ee" /> : (
-        <>
-          <TouchableOpacity style={styles.button} onPress={() => handleAuth(false)}>
-            <Text style={styles.buttonText}>Login</Text>
+    <View style={darkStyles.container}>
+      <Text style={darkStyles.title}>Login to MAD</Text>
+      <TextInput
+        style={darkStyles.input}
+        placeholder="Username"
+        placeholderTextColor="#888"
+        value={username}
+        onChangeText={setUsername}
+      />
+      <TextInput
+        style={darkStyles.input}
+        placeholder="Password"
+        placeholderTextColor="#888"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
+      />
+      <TouchableOpacity style={darkStyles.button} onPress={handleLogin}>
+        <Text style={darkStyles.buttonText}>Login</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const ProfileScreen = () => {
+  return (
+    <ScrollView style={darkStyles.container}>
+      {/* Cover Photo */}
+      <Image source={{ uri: userProfile.coverPhoto }} style={darkStyles.coverPhoto} />
+      {/* Profile Picture */}
+      <Image source={{ uri: userProfile.profilePic }} style={darkStyles.profilePic} />
+      <Text style={darkStyles.name}>{userProfile.name}</Text>
+      <Text style={darkStyles.email}>{userProfile.email}</Text>
+      <Text style={darkStyles.bio}>{userProfile.bio}</Text>
+      <Text style={darkStyles.stats}>{userProfile.friendsCount} Friends • {userProfile.postsCount} Posts</Text>
+    </ScrollView>
+  );
+};
+
+const FeedScreen = () => (
+  <ScrollView style={darkStyles.container}>
+    {posts.map((post) => (
+      <View key={post.id} style={darkStyles.postContainer}>
+        <Text style={darkStyles.postText}>{post.user}: {post.text}</Text>
+        <Image source={{ uri: post.image }} style={darkStyles.postImage} />
+        <View style={darkStyles.postActions}>
+          <TouchableOpacity style={darkStyles.actionButton}>
+            <Ionicons name="heart-outline" size={20} color="#FFFFFF" />
+            <Text style={darkStyles.actionText}>{post.likes}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={() => handleAuth(true)}>
-            <Text style={styles.buttonText}>Sign Up</Text>
+          <TouchableOpacity style={darkStyles.actionButton}>
+            <Ionicons name="chatbubble-outline" size={20} color="#FFFFFF" />
+            <Text style={darkStyles.actionText}>{post.comments}</Text>
           </TouchableOpacity>
-        </>
+        </View>
+      </View>
+    ))}
+  </ScrollView>
+);
+
+const ChatScreen = () => (
+  <View style={darkStyles.chatContainer}>
+    <FlatList
+      data={chatMessages}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <View
+          style={[
+            darkStyles.chatBubble,
+            item.sender === 'user' ? darkStyles.userBubble : darkStyles.otherBubble,
+          ]}
+        >
+          <Text style={darkStyles.chatText}>{item.text}</Text>
+        </View>
       )}
-    </View>
-  );
-}
-
-// Feed Screen
-function FeedScreen() {
-  return (
-    <View style={styles.container}>
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.post}>
-            <Text style={styles.username}>{item.user}</Text>
-            <Image source={{ uri: item.image }} style={styles.postImage} />
-            <View style={styles.postActions}>
-              <Text>❤️ {item.likes} Likes</Text>
-              <Text>💬 {item.comments} Comments</Text>
-            </View>
-          </View>
-        )}
+    />
+    <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10 }}>
+      <TextInput
+        style={[darkStyles.input, { flex: 1, marginRight: 10 }]}
+        placeholder="Type a message"
+        placeholderTextColor="#888"
       />
+      <TouchableOpacity style={darkStyles.button}>
+        <Ionicons name="send" size={20} color="#FFFFFF" />
+      </TouchableOpacity>
     </View>
-  );
-}
+  </View>
+);
 
-// Profile Screen
-function ProfileScreen() {
-  return (
-    <View style={styles.container}>
-      <Image source={{ uri: 'https://via.placeholder.com/100' }} style={styles.profilePic} />
-      <Text style={styles.username}>User Name</Text>
-      <Text style={styles.bio}>This is a sample bio.</Text>
-      <Text>Followers: 100 | Following: 50</Text>
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        renderItem={({ item }) => <Image source={{ uri: item.image }} style={styles.profilePost} />}
-      />
-    </View>
-  );
-}
+const NotificationsScreen = () => (
+  <ScrollView style={darkStyles.container}>
+    <Text style={darkStyles.notificationText}>New friend request from John Doe</Text>
+    <Text style={darkStyles.notificationText}>You have a new message</Text>
+    <Text style={darkStyles.notificationText}>Your post got 10 likes</Text>
+  </ScrollView>
+);
 
-function MainTabs() {
+const FriendListScreen = () => (
+  <ScrollView style={darkStyles.container}>
+    {friendRequests.map((request) => (
+      <View key={request.id} style={darkStyles.friendRequestContainer}>
+        <Text style={darkStyles.friendRequestText}>{request.name} ({request.mutualFriends} mutual friends)</Text>
+        <TouchableOpacity style={darkStyles.button}>
+          <Text style={darkStyles.buttonText}>Accept</Text>
+        </TouchableOpacity>
+      </View>
+    ))}
+  </ScrollView>
+);
+
+const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
+const MainApp = () => {
   return (
-    <Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={{
+        tabBarStyle: { backgroundColor: '#121212' },
+        tabBarActiveTintColor: '#4CAF50',
+        tabBarInactiveTintColor: '#888',
+      }}
+    >
       <Tab.Screen name="Feed" component={FeedScreen} options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="home" size={size} color={color} />
+        )
+      }} />
+      <Tab.Screen name="Chat" component={ChatScreen} options={{
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="chatbubbles" size={size} color={color} />
+        )
+      }} />
+      <Tab.Screen name="Notifications" component={NotificationsScreen} options={{
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="notifications" size={size} color={color} />
+        )
+      }} />
+      <Tab.Screen name="Friends" component={FriendListScreen} options={{
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="people" size={size} color={color} />
+        )
       }} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{
-        tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />
+        tabBarIcon: ({ color, size }) => (
+          <Ionicons name="person" size={size} color={color} />
+        )
       }} />
     </Tab.Navigator>
   );
-}
+};
 
 export default function App() {
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={DarkTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Auth" component={AuthScreen} />
-        <Stack.Screen name="Main" component={MainTabs} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="MainApp" component={MainApp} />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 10 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  input: { width: '80%', padding: 10, marginBottom: 10, borderWidth: 1, borderRadius: 5 },
-  button: { backgroundColor: '#6200ee', padding: 10, borderRadius: 5, width: '80%', alignItems: 'center', marginTop: 10 },
-  buttonText: { color: '#fff', fontWeight: 'bold' },
-  profilePic: { width: 100, height: 100, borderRadius: 50, marginBottom: 10 },
-  username: { fontWeight: 'bold', fontSize: 16 },
-  bio: { fontStyle: 'italic', marginBottom: 10 },
-  post: { marginBottom: 20, alignItems: 'center' },
-  postImage: { width: 300, height: 200, borderRadius: 10, marginBottom: 5 },
-  postActions: { flexDirection: 'row', justifyContent: 'space-between', width: '80%' },
-  profilePost: { width: 150, height: 150, margin: 5, borderRadius: 10 },
-});
